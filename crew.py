@@ -127,6 +127,30 @@ async def generate_sop(request: SOPRequest):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 
+'''
+@app.post("/humanize-text/", response_model=HumanizeResponse)
+async def humanize_text(request: HumanizeRequest):
+
+    try:
+
+        text = request.text
+        # Create crew with provided or default LLM config
+        crew = HumanizeCrew(llm_config)
+
+        # Generate SOP
+        sop = crew.humanize_text(
+            text
+        )
+
+        return {"sop": sop}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=f"Validation error: {ve}")
+    except RuntimeError as re:
+        raise HTTPException(status_code=500, detail=f"Internal processing error: {re}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+'''
+
 # Optional: Run the server if script is executed directly
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -9,7 +9,7 @@ class SOPAgents:
         self.llm_config = llm_config
         self.tools = SOPGenerationTools(llm_config)
         self.tools_list = self.tools.create_tools()
-
+    
     def get_research_agent(self) -> Agent:
         """Create and return the research agent"""
         return Agent(
