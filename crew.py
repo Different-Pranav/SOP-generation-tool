@@ -44,7 +44,8 @@ class SOPGenerationCrew:
             crew = Crew(
                 agents=[researcher, writer, humanizer],
                 tasks=[research_task, writing_task, humanize_task],
-                verbose=True
+                verbose=True,
+                #planning=True
             )
 
             # Execute crew

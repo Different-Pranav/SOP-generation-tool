@@ -1,5 +1,6 @@
 import re
 import os
+from openai import OpenAI
 import logging
 import requests
 from typing import Dict, Any, List
@@ -9,6 +10,12 @@ from langchain.tools import StructuredTool
 from crewai import LLM
 from litellm import completion
 from pydantic import BaseModel, Field, ValidationError
+
+RUNPOD_API_KEY = 'rpa_GK378GQ1KXFODHN6OF76VZ334RGI03N3EWAUUXNB1efd24'
+
+BASE_URL = "https://api.runpod.ai/v2/pkrvrt52fitz9x/openai/v1"
+
+MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 # Configure logging
 logging.basicConfig(
@@ -32,10 +39,10 @@ class SOPGenerationTools:
             
             # Initialize search and LLM
             self.search = DuckDuckGoSearchRun()
-            self.llm = LLM(
-                model=config.get('model'),
-                api_key=config.get('api_key'),
-            )
+            self.llm = OpenAI(
+                        base_url=BASE_URL,
+                        api_key=RUNPOD_API_KEY,
+                    )
             
             # Contractions and idioms
             self.contractions = {
@@ -252,12 +259,17 @@ class SOPGenerationTools:
     
     Generate a compelling, original Statement of Purpose that showcases your unique journey, motivations, and aspirations."""
             
-            # Use environment variable for API key
-            os.environ['GROQ_API_KEY'] = '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'
+            client =  OpenAI(
+                        base_url=BASE_URL,
+                        api_key=RUNPOD_API_KEY,
+                    )
             
-            response = completion(
-                model="groq/llama3-8b-8192", 
-                messages=[{"role": "user", "content": prompt}]
+            
+            response = completion.create(
+                model="openai/Qwen2.5-7B-Instruct",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                max_tokens=100,
             )
             
             generated_sop = response.choices[0].message.content
