@@ -1,15 +1,22 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import Dict
 import uvicorn
-from agents import SOPAgents
-from tasks import SOPTasks
-from crewai import Crew
+from crewai import Crew, Process, LLM
+import os
+
+from generics.agents import StudentInfo, SOPRequest, SOPResponse
+from core.agents import SOPAgents
+from core.tasks import SOPTasks
 
 llm_config = {
-    "model": "groq/llama3-8b-8192",
+    "model": "groq/llama3.1-8b",
     "api_key": "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"
 }
+
+
+# Use environment variable for API key
+os.environ['OPENAI_API_KEY'] = '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'
+os.environ['GROQ_API_KEY'] = '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'
 
 
 class SOPGenerationCrew:
@@ -28,6 +35,8 @@ class SOPGenerationCrew:
             researcher = self.agents.get_research_agent()
             writer = self.agents.get_writer_agent()
             humanizer = self.agents.get_humanizer_agent()
+            manager = self.agents.manager_agent()
+            human_interaction = self.agents.interaction_agent()
         except AttributeError as e:
             raise RuntimeError(f"Error initializing agents: {e}")
 
@@ -36,15 +45,19 @@ class SOPGenerationCrew:
             research_task = SOPTasks.create_research_task(researcher, university, program)
             writing_task = SOPTasks.create_writing_task(writer, student_info, university, program)
             humanize_task = SOPTasks.create_humanize_task(humanizer)
+            interaction_task = SOPTasks.create_interaction_task(human_interaction)
         except Exception as e:
             raise ValueError(f"Failed to create SOP tasks: {e}")
 
         try:
             # Create crew
             crew = Crew(
-                agents=[researcher, writer, humanizer],
-                tasks=[research_task, writing_task, humanize_task],
-                verbose=True
+                agents=[researcher, writer, humanizer,human_interaction],
+                tasks=[research_task, writing_task, humanize_task,interaction_task],
+                verbose=True,
+                #planning=True
+                manager_agent=manager,
+                process=Process.hierarchical
             )
 
             # Execute crew
@@ -65,26 +78,6 @@ class SOPGenerationCrew:
         return final_sop
 
 
-# Pydantic models for request validation
-class StudentInfo(BaseModel):
-    name: str
-    background: str
-    gpa: str
-    work_experience: Optional[str] = None
-    achievements: Optional[List[str]] = None
-    background_story: str
-    goals: str
-
-
-class SOPRequest(BaseModel):
-    student_info: StudentInfo
-    university: str
-    program: str
-
-
-# Response Model
-class SOPResponse(BaseModel):
-    sop: str
 
 
 # FastAPI application
@@ -127,30 +120,6 @@ async def generate_sop(request: SOPRequest):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 
-'''
-@app.post("/humanize-text/", response_model=HumanizeResponse)
-async def humanize_text(request: HumanizeRequest):
 
-    try:
-
-        text = request.text
-        # Create crew with provided or default LLM config
-        crew = HumanizeCrew(llm_config)
-
-        # Generate SOP
-        sop = crew.humanize_text(
-            text
-        )
-
-        return {"sop": sop}
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=f"Validation error: {ve}")
-    except RuntimeError as re:
-        raise HTTPException(status_code=500, detail=f"Internal processing error: {re}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
-'''
-
-# Optional: Run the server if script is executed directly
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
